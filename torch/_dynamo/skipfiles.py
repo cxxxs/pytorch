@@ -209,6 +209,11 @@ FILE_INLINELIST |= {
     str(obj.__module__) for obj in torch.optim.__dict__.values() if inspect.isclass(obj)
 }
 
+if torch.distributed.is_available():
+    FILENAME_INLINELIST |= set(
+        glob.glob(_module_dir(torch) + "distributed/**/*.py", recursive=True),
+    )
+
 
 # Force inline functions under these modules, even the modules is in *_SKIPLIST.
 SUBMODULE_INLINELIST = {
@@ -223,7 +228,7 @@ SUBMODULE_INLINELIST = {
     "torch.testing",
     "torch.utils._contextlib",
     "torch.utils._pytree",
-    "torch.distributed"
+    # "torch.distributed"
 }
 
 

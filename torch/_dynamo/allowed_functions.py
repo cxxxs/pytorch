@@ -238,16 +238,16 @@ def _allowed_function_ids():
     _find_torch_objects(torch)
     _find_torch_objects(math)
 
-    if config.trace_distributed and torch.distributed.is_available():
-        for f in [
-            torch.distributed._functional_collectives_impl._all_gather_into_tensor,
-            torch.distributed._functional_collectives_impl._all_reduce,
-            torch.distributed._functional_collectives_impl._reduce_scatter_tensor,
-            torch.distributed._functional_collectives_impl._all_reduce_coalesced,
-            torch.distributed._functional_collectives_impl._all_gather_into_tensor_coalesced,
-            torch.distributed._functional_collectives_impl._reduce_scatter_tensor_coalesced,
-        ]:
-            torch_object_ids[id(f)] = repr(f)
+    # if config.trace_distributed and torch.distributed.is_available():
+    #     for f in [
+    #         torch.distributed._functional_collectives_impl._all_gather_into_tensor,
+    #         torch.distributed._functional_collectives_impl._all_reduce,
+    #         torch.distributed._functional_collectives_impl._reduce_scatter_tensor,
+    #         torch.distributed._functional_collectives_impl._all_reduce_coalesced,
+    #         torch.distributed._functional_collectives_impl._all_gather_into_tensor_coalesced,
+    #         torch.distributed._functional_collectives_impl._reduce_scatter_tensor_coalesced,
+    #     ]:
+    #         torch_object_ids[id(f)] = repr(f)
 
     # torch.Tensor.{fn}
     for name in dir(torch.Tensor):
@@ -354,7 +354,7 @@ def _is_allowed_distributed(obj):
 
 
 def is_allowed(obj):
-    if not _is_allowed_distributed(obj):
+    if config.trace_distributed and not _is_allowed_distributed(obj):
         return False
 
     """Is this safe to trace like torch.add ?"""
