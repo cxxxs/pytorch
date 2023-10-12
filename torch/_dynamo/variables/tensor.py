@@ -17,6 +17,7 @@ import torch._numpy as tnp
 import torch.fx
 import torch.random
 from torch._dynamo.variables.base import VariableTracker
+from torch._dynamo import compiled_autograd
 
 from torch.fx.experimental.symbolic_shapes import free_symbols, guard_scalar, SymTypes
 
@@ -698,6 +699,19 @@ class TensorVariable(VariableTracker):
             # see [On tensor.register_hook]
             assert len(args) == 1
             fn_var = args[0]
+            if not isinstance(
+                fn_var,
+                (
+                    variables.functions.FunctoolsPartialVariable,
+                    variables.UserFunctionVariable,
+                    variables.TorchVariable,
+                    variables.NNModuleVariable,
+                ),
+            ):
+                unimplemented("Unexpected callable type passed to register_hook")
+
+            # Guards from the fn_var
+            options.update(VariableTracker.propagate(fn_var))
 
             if isinstance(fn_var, variables.NestedUserFunctionVariable):
                 # NestedUserFunctionVariable don't carry their fn, but reconstruction builds it

@@ -219,6 +219,9 @@ class AutogradCompilerFactory:
         return instance
 
 
+compiled_autograd_enabled = False
+
+
 @contextlib.contextmanager
 def enable(compiler_fn):
     prior = torch._C._dynamo.compiled_autograd.set_autograd_compiler(

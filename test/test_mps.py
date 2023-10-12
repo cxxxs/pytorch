@@ -69,7 +69,6 @@ def mps_ops_grad_modifier(ops):
 
         # Unimplemented ops
         '__getitem__': [torch.float16],
-        'sgn': [torch.float16, torch.float32],
         '_segment_reduce': [torch.float16, torch.float32],
         'unfold_copy': [torch.float16, torch.float32],  # unfold_backward is not implemented
         'unfold': [torch.float16, torch.float32],
@@ -593,7 +592,6 @@ def mps_ops_modifier(ops):
         'nn.functional.multilabel_margin_loss': None,
         'nn.functional.pdist': None,
         'nn.functional.rrelu': None,
-        'nn.functional.softshrink': None,
         'nn.functional.norm': None,
         'ormqr': None,
         'pca_lowrank': None,
@@ -720,6 +718,7 @@ def mps_ops_modifier(ops):
         'mat': [torch.int16, torch.int32, torch.int64, torch.uint8, torch.int8],
         'mv': [torch.int16, torch.int32, torch.int64, torch.uint8, torch.int8],
         'tensordot': [torch.int16, torch.int32, torch.int64, torch.uint8, torch.int8],
+        'unravel_index': [torch.int32, torch.int64],
 
         # new_zeros/new_ones: Cannot convert a MPS Tensor to float64 dtype as
         # the MPS framework doesn't support float64
