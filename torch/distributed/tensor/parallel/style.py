@@ -563,6 +563,34 @@ class RowwiseParallel(ParallelStyle):
         output_layouts=Replicate(),
         use_local_output=True,
     ) -> None:
+        """
+        Args:
+            input_layouts (Union[Placement, Tuple[Placement, ...]]):
+                The layout of input tensor(s) which DTensor will be created upon.
+            output_layouts (Union[Placement, Tuple[Placement, ...]]):
+                The layout of input tensor(s) which created DTensor will be redistributed to.
+            use_local_output (bool):
+                Whether to convert the DTensor to local tensor.
+
+        Returns:
+            None.
+
+        Example::
+        >>> # xdoctest: +SKIP(failing)
+        >>> from torch.distributed.tensor.parallel import parallelize_module, PrepareModuleInput
+        >>> ...
+        >>> parallelize_plan = {
+        >>>     "wo": RowwiseParallel(),   # The input of Linear will be converted to Sharded DTensor
+        >>>                                # and we will return a replicate tensor as output.
+        >>>     ...
+        >>> }
+        >>> parallelize_module(
+        >>>     module=block, # this can be a submodule or module
+        >>>     ...,
+        >>>     parallelize_plan=parallelize_plan,
+        >>> )
+        >>> ...
+        """
         if isinstance(input_layouts, tuple) or isinstance(output_layouts, tuple):
             raise NotImplementedError(
                 "RowwiseParallel only supports single input/output."
@@ -599,6 +627,34 @@ class ColwiseParallel(ParallelStyle):
         output_layouts=Shard(-1),
         use_local_output=True,
     ) -> None:
+        """
+        Args:
+            input_layouts (Union[Placement, Tuple[Placement, ...]]):
+                The layout of input tensor(s) which DTensor will be created upon.
+            output_layouts (Union[Placement, Tuple[Placement, ...]]):
+                The layout of input tensor(s) which created DTensor will be redistributed to.
+            use_local_output (bool):
+                Whether to convert the DTensor to local tensor.
+
+        Returns:
+            None.
+
+        Example::
+        >>> # xdoctest: +SKIP(failing)
+        >>> from torch.distributed.tensor.parallel import parallelize_module, PrepareModuleInput
+        >>> ...
+        >>> parallelize_plan = {
+        >>>     "w1": ColwiseParallel(),   # The input of Linear will be converted to Replicated DTensor
+        >>>                                # and we will return a sharded tensor as output.
+        >>>     ...
+        >>> }
+        >>> parallelize_module(
+        >>>     module=block, # this can be a submodule or module
+        >>>     ...,
+        >>>     parallelize_plan=parallelize_plan,
+        >>> )
+        >>> ...
+        """
         if isinstance(input_layouts, tuple) or isinstance(output_layouts, tuple):
             raise NotImplementedError(
                 "ColwiseParallel only supports single input/output."
