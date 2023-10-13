@@ -89,6 +89,8 @@ class StateDictOptions:
     # Whether to ignore the frozen parameters when getting the state_dict.
     # The default is False.
     ignore_frozen_params: bool = False
+    # The `strict` option for model.load_state_dict() call.
+    strict: bool = True
 
 
 @dataclass
@@ -335,7 +337,7 @@ def _load_model_state_dict(
                 state_dict[fqn_with_ddp_prefix] = state_dict.pop(fqn)
 
     with info.fsdp_context():
-        return _state_dict_fn(model, "load_state_dict")(state_dict)
+        return _state_dict_fn(model, "load_state_dict")(state_dict, strict=info.strict)
 
 
 def _init_optim_state(optim: torch.optim.Optimizer) -> None:
