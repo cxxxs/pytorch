@@ -1,4 +1,59 @@
+from functools import total_ordering
 from typing import Iterable, List, Optional, Set, Tuple
+
+
+@total_ordering
+class ShardedTest:
+    name: str
+    shard: int
+    num_shards: int
+    time: Optional[float]  # In seconds
+
+    def __init__(
+        self, name: str, shard: int, num_shards: int, time: Optional[float] = None
+    ) -> None:
+        self.name = name
+        self.shard = shard
+        self.num_shards = num_shards
+        self.time = time
+
+    def __eq__(self, other: object) -> bool:
+        if not isinstance(other, ShardedTest):
+            return False
+        return (
+            self.name == other.name
+            and self.shard == other.shard
+            and self.num_shards == other.num_shards
+            and self.time == other.time
+        )
+
+    def __lt__(self, other: object) -> bool:
+        if not isinstance(other, ShardedTest):
+            raise NotImplementedError
+
+        # This is how the list was implicity sorted when it was a NamedTuple
+        if self.name != other.name:
+            return self.name < other.name
+        if self.shard != other.shard:
+            return self.shard < other.shard
+        if self.num_shards != other.num_shards:
+            return self.num_shards < other.num_shards
+
+        # None is the smallest value
+        if self.time is None:
+            return True
+        if other.time is None:
+            return False
+        return self.time < other.time
+
+    def __str__(self) -> str:
+        return f"{self.name} {self.shard}/{self.num_shards}"
+
+    def get_time(self) -> float:
+        return self.time or 0
+
+    def get_pytest_args(self) -> List[str]:
+        return ["-k", "TestC"]
 
 
 class ExecuteTest:

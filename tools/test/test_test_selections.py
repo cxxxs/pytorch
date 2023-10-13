@@ -9,8 +9,8 @@ REPO_ROOT = pathlib.Path(__file__).resolve().parent.parent.parent
 try:
     # using tools/ to optimize test run.
     sys.path.append(str(REPO_ROOT))
-    from tools.testing.execute_test import ExecuteTest
-    from tools.testing.test_selections import calculate_shards, ShardedTest, THRESHOLD
+    from tools.testing.execute_test import ExecuteTest, ShardedTest
+    from tools.testing.test_selections import calculate_shards, THRESHOLD
 except ModuleNotFoundError:
     print("Can't import required modules, exiting")
     sys.exit(1)
@@ -32,7 +32,7 @@ class TestB(unittest.TestCase):
 
 
 class TestCalculateShards(unittest.TestCase):
-    tests: List[str] = [
+    tests: List[ExecuteTest] = [
         ExecuteTest("super_long_test"),
         ExecuteTest("long_test1"),
         ExecuteTest("long_test2"),
@@ -266,7 +266,10 @@ class TestCalculateShards(unittest.TestCase):
             ),
         ]
         self.assert_shards_equal(
-            expected_shards, calculate_shards(2, list(test_times.keys()), test_times)
+            expected_shards,
+            calculate_shards(
+                2, [ExecuteTest(t) for t in test_times.keys()], test_times
+            ),
         )
 
         test_times = {"test1": THRESHOLD / 2, "test2": THRESHOLD}
@@ -278,7 +281,10 @@ class TestCalculateShards(unittest.TestCase):
             ),
         ]
         self.assert_shards_equal(
-            expected_shards, calculate_shards(2, list(test_times.keys()), test_times)
+            expected_shards,
+            calculate_shards(
+                2, [ExecuteTest(t) for t in test_times.keys()], test_times
+            ),
         )
 
     def test_split_shards_random(self) -> None:
@@ -319,7 +325,7 @@ class TestCalculateShards(unittest.TestCase):
     def test_calculate_2_shards_against_optimal_shards(self) -> None:
         random.seed(120)
         for _ in range(100):
-            random_times = {k: random.random() * 10 for k in self.tests}
+            random_times = {k.test_file: random.random() * 10 for k in self.tests}
             # all test times except first two
             rest_of_tests = [
                 i
@@ -339,7 +345,7 @@ class TestCalculateShards(unittest.TestCase):
             if sum_of_rest != 0:
                 # The calculated shard should not have a ratio worse than 7/6 for num_shards = 2
                 self.assertGreaterEqual(7.0 / 6.0, max_shard_time / sum_of_rest)
-                sorted_tests = sorted(self.tests)
+                sorted_tests = sorted([t.test_file for t in self.tests])
                 sorted_shard_tests = sorted(
                     calculated_shards[0][1] + calculated_shards[1][1]
                 )

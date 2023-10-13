@@ -3,10 +3,10 @@ import os
 import subprocess
 from pathlib import Path
 
-from typing import Callable, Dict, List, NamedTuple, Optional, Sequence, Tuple
+from typing import Callable, Dict, List, Optional, Sequence, Tuple
 
 from tools.stats.import_test_stats import get_disabled_tests, get_slow_tests
-from tools.testing.execute_test import ExecuteTest
+from tools.testing.execute_test import ExecuteTest, ShardedTest
 
 REPO_ROOT = Path(__file__).resolve().parent.parent.parent
 
@@ -41,22 +41,6 @@ if IS_ROCM and not IS_MEM_LEAK_CHECK:
     except subprocess.CalledProcessError as e:
         # The safe default for ROCm GHA runners is to run tests serially.
         NUM_PROCS = 1
-
-
-class ShardedTest(NamedTuple):
-    name: str
-    shard: int
-    num_shards: int
-    time: Optional[float]  # In seconds
-
-    def __str__(self) -> str:
-        return f"{self.name} {self.shard}/{self.num_shards}"
-
-    def get_time(self) -> float:
-        return self.time or 0
-
-    def get_pytest_args(self) -> List[str]:
-        return ["-k", "TestC"]
 
 
 class ShardJob:

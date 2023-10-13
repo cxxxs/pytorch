@@ -3,7 +3,7 @@ import json
 import pathlib
 import sys
 import unittest
-from typing import Any, Dict, Set
+from typing import Any, Dict, Optional, Set
 from unittest import mock
 
 REPO_ROOT = pathlib.Path(__file__).resolve().parent.parent.parent
@@ -37,10 +37,10 @@ class HeuristicsTestMixin(unittest.TestCase):
     def assert_heuristics_match(
         self,
         test_prioritizations: TestPrioritizations,
-        expected_high_tests: TestRuns = None,
-        expected_probable_tests: TestRuns = None,
-        expected_unranked_tests: TestRuns = None,
-    ):
+        expected_high_tests: Optional[TestRuns] = None,
+        expected_probable_tests: Optional[TestRuns] = None,
+        expected_unranked_tests: Optional[TestRuns] = None,
+    ) -> None:
         if expected_unranked_tests:
             self.assertTupleEqual(
                 test_prioritizations.get_unranked_relevance_tests(),
