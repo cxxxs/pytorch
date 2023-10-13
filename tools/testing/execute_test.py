@@ -1,4 +1,5 @@
-from typing import List, Optional, Set, Tuple
+from typing import Iterable, List, Optional, Set, Tuple
+
 
 class ExecuteTest:
     """
@@ -9,7 +10,12 @@ class ExecuteTest:
     _exclued: Set[str]  # Tests that should be excluded from this test run
     _included: Set[str]  # If non-empy, only these tests should be run in this test run
 
-    def __init__(self, name: str, excluded: Optional[List[str]] = None, included: Optional[List[str]] = None) -> None:
+    def __init__(
+        self,
+        name: str,
+        excluded: Optional[Iterable[str]] = None,
+        included: Optional[Iterable[str]] = None,
+    ) -> None:
         self._excluded = set()
         self._included = set()
 
@@ -17,7 +23,9 @@ class ExecuteTest:
             raise ValueError("Can't specify both included and excluded")
 
         if "::" in name:
-            assert not included and not excluded, "Can't specify included or excluded tests when specifying a test class in the file name"
+            assert (
+                not included and not excluded
+            ), "Can't specify included or excluded tests when specifying a test class in the file name"
             self.test_file, test_class = name.split("::")
             self._included.add(test_class)
         else:
@@ -49,6 +57,9 @@ class ExecuteTest:
         return r
 
     def __str__(self) -> str:
+        if self.is_empty():
+            return "Empty"
+
         pytest_filter = self.get_pytest_filter()
         if pytest_filter:
             return self.test_file + ", " + pytest_filter
@@ -96,17 +107,21 @@ class ExecuteTest:
         # 4 possible cases:
 
         # 1. Either file is the full file, so union is everything
-        if  self._is_full_file() or other._is_full_file():
+        if self._is_full_file() or other._is_full_file():
             # The union is the whole file
             return ExecuteTest(self.test_file)
 
         # 2. Both files only run what's in _included, so union is the union of the two sets
         if self._included and other._included:
-            return ExecuteTest(self.test_file, included=self._included.union(other._included))
+            return ExecuteTest(
+                self.test_file, included=self._included.union(other._included)
+            )
 
         # 3. Both files only exclude what's in _excluded, so union is the intersection of the two sets
         if self._excluded and other._excluded:
-            return ExecuteTest(self.test_file, excluded=self._excluded.intersection(other._excluded))
+            return ExecuteTest(
+                self.test_file, excluded=self._excluded.intersection(other._excluded)
+            )
 
         # 4. One file includes and the other excludes, so we then continue excluding the _excluded set minus
         #    whatever is in the _included set
@@ -116,8 +131,12 @@ class ExecuteTest:
 
     def __ior__(self, other: "ExecuteTest") -> "ExecuteTest":
         res = self | other
+        self.test_file = res.test_file
         self._included = res._included
         self._excluded = res._excluded
+
+        print(f"  returning {self}")
+        return self
 
     def __sub__(self, other: "ExecuteTest") -> "ExecuteTest":
         """
@@ -139,7 +158,7 @@ class ExecuteTest:
         if other._is_full_file():
             return ExecuteTest.empty()
 
-        def return_inclusions_or_empty(inclusions:List[str]) -> ExecuteTest:
+        def return_inclusions_or_empty(inclusions: Set[str]) -> ExecuteTest:
             if inclusions:
                 return ExecuteTest(self.test_file, included=inclusions)
             return ExecuteTest.empty()
@@ -148,7 +167,9 @@ class ExecuteTest:
             if self._included:
                 return return_inclusions_or_empty(self._included - other._included)
             else:
-                return ExecuteTest(self.test_file, excluded=self._excluded | other._included)
+                return ExecuteTest(
+                    self.test_file, excluded=self._excluded | other._included
+                )
         else:
             if self._included:
                 return return_inclusions_or_empty(self._included & other._excluded)
@@ -157,8 +178,10 @@ class ExecuteTest:
 
     def __isub__(self, other: "ExecuteTest") -> "ExecuteTest":
         res = self - other
+        self.test_file = res.test_file
         self._included = res._included
         self._excluded = res._excluded
+        return self
 
     def __and__(self, other: "ExecuteTest") -> "ExecuteTest":
         return (self | other) - (self - other) - (other - self)

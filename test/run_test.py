@@ -42,6 +42,8 @@ REPO_ROOT = pathlib.Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(REPO_ROOT))
 from tools.stats.export_test_times import TEST_TIMES_FILE
 from tools.stats.upload_metrics import add_global_metric, emit_metric
+
+from tools.testing.execute_test import ExecuteTest
 from tools.testing.target_determination.determinator import (
     AggregatedHeuristics,
     get_test_prioritizations,
@@ -53,8 +55,6 @@ from tools.testing.test_selections import (
     ShardedTest,
     THRESHOLD,
 )
-
-from tools.testing.execute_test import ExecuteTest
 
 HAVE_TEST_SELECTION_TOOLS = True
 # Make sure to remove REPO_ROOT after import is done
@@ -1474,7 +1474,7 @@ def get_sharding_opts(options) -> Tuple[int, int]:
 
 def do_sharding(
     options,
-    selected_tests: Sequence[str],
+    selected_tests: Sequence[ExecuteTest],
     test_file_times: Dict[str, float],
     sort_by_time: bool = True,
 ) -> List[ShardedTest]:

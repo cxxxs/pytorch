@@ -1,8 +1,6 @@
-import unittest
 import pathlib
 import sys
-from collections import defaultdict
-from typing import Dict, List, Tuple
+import unittest
 
 REPO_ROOT = pathlib.Path(__file__).resolve().parent.parent.parent
 try:
@@ -12,6 +10,7 @@ try:
 except ModuleNotFoundError:
     print("Can't import required modules, exiting")
     sys.exit(1)
+
 
 class TestTestRun(unittest.TestCase):
     def test_union_with_full_run(self):
@@ -72,7 +71,6 @@ class TestTestRun(unittest.TestCase):
 
         self.assertEqual(run1 | run2, run1)
         self.assertEqual(run2 | run1, run1)
-
 
     def test_subtracting_full_run_fails(self):
         run1 = ExecuteTest("foo::bar")
@@ -141,7 +139,9 @@ class TestTestRun(unittest.TestCase):
         run1 = ExecuteTest("foo", excluded=["bar", "baz"])
         run2 = ExecuteTest("foo", included=["bar", "car"])
 
-        self.assertEqual(run1 - run2, ExecuteTest("foo", excluded=["bar", "baz", "car"]))
+        self.assertEqual(
+            run1 - run2, ExecuteTest("foo", excluded=["bar", "baz", "car"])
+        )
         self.assertEqual(run2 - run1, ExecuteTest("foo", included=["bar"]))
 
     def test_and(self):
@@ -154,7 +154,10 @@ class TestTestRun(unittest.TestCase):
         run1 = ExecuteTest("foo", excluded=["bar", "baz"])
         run2 = ExecuteTest("foo", excluded=["bar", "car"])
 
-        self.assertEqual(run1 & run2, ExecuteTest("foo", excluded=["bar", "baz", "car"]))
+        self.assertEqual(
+            run1 & run2, ExecuteTest("foo", excluded=["bar", "baz", "car"])
+        )
+
 
 if __name__ == "__main__":
     unittest.main()

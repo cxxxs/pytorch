@@ -11,12 +11,12 @@ try:
     # using tools/ to optimize test run.
     sys.path.append(str(REPO_ROOT))
 
+    from tools.testing.execute_test import ExecuteTest, TestRuns
     from tools.testing.target_determination.determinator import (
         AggregatedHeuristics,
         get_test_prioritizations,
         TestPrioritizations,
     )
-    from tools.testing.execute_test import ExecuteTest, TestRuns
     from tools.testing.target_determination.heuristics.previously_failed_in_pr import (
         _get_previously_failing_tests,
     )
@@ -32,20 +32,20 @@ def mocked_file(contents: Dict[Any, Any]) -> io.IOBase:
     file_object.seek(0)
     return file_object
 
+
 class HeuristicsTestMixin(unittest.TestCase):
     def assert_heuristics_match(
-            self,
-            test_prioritizations: TestPrioritizations,
-            expected_high_tests: TestRuns = None,
-            expected_probable_tests: TestRuns = None,
-            expected_unranked_tests: TestRuns = None,
-        ):
-
+        self,
+        test_prioritizations: TestPrioritizations,
+        expected_high_tests: TestRuns = None,
+        expected_probable_tests: TestRuns = None,
+        expected_unranked_tests: TestRuns = None,
+    ):
         if expected_unranked_tests:
             self.assertTupleEqual(
                 test_prioritizations.get_unranked_relevance_tests(),
                 expected_unranked_tests,
-                "Unranked tests differ"
+                "Unranked tests differ",
             )
 
         if expected_probable_tests:
@@ -61,6 +61,7 @@ class HeuristicsTestMixin(unittest.TestCase):
                 expected_high_tests,
                 "High relevance tests differ",
             )
+
 
 class TestParsePrevTests(HeuristicsTestMixin):
     @mock.patch("pathlib.Path.exists", return_value=False)
@@ -129,11 +130,11 @@ class TestParsePrevTests(HeuristicsTestMixin):
             test_prioritizations,
             expected_high_tests=expected_prioritizations.get_high_relevance_tests(),
             expected_probable_tests=expected_prioritizations.get_probable_relevance_tests(),
-            expected_unranked_tests=expected_prioritizations.get_unranked_relevance_tests())
+            expected_unranked_tests=expected_prioritizations.get_unranked_relevance_tests(),
+        )
 
 
 class TestInterface(HeuristicsTestMixin):
-
     def test_class_prioritization(self) -> None:
         tests = ["test1", "test2", "test3", "test4", "test5"]
 
@@ -155,28 +156,33 @@ class TestInterface(HeuristicsTestMixin):
         self.assert_heuristics_match(
             prioritizations,
             expected_probable_tests=expected_probable_tests,
-            expected_unranked_tests=expected_unranked_tests)
+            expected_unranked_tests=expected_unranked_tests,
+        )
+
 
 class TestAggregatedHeuristics(HeuristicsTestMixin):
-
     def test_merging_multiple_test_class_heuristics(self) -> None:
         tests = ["test1", "test2", "test3", "test4"]
+
+        print("-------------------")
+        print("Gen Heuristics 1")
         heuristic1 = TestPrioritizations(
             tests_being_ranked=tests,
             probable_relevance=["test2::TestFooClass", "test3"],
         )
+
+        print("-------------------")
+        print("Gen Heuristics 2")
         heuristic2 = TestPrioritizations(
             tests_being_ranked=tests,
             high_relevance=["test2::TestFooClass", "test3::TestBarClass"],
         )
 
-        expected_aggregated_high_relevance = tuple(
+        expected_high_relevance = tuple(
             ExecuteTest(test) for test in ["test2::TestFooClass", "test3::TestBarClass"]
         )
-        expected_aggregated_probable_relevance = (
-            ExecuteTest("test3", excluded=["TestBarClass"]),
-        )
-        expected_aggregated_unranked_relevance = (
+        expected_probable_relevance = (ExecuteTest("test3", excluded=["TestBarClass"]),)
+        expected_unranked_relevance = (
             ExecuteTest("test1"),
             ExecuteTest("test2", excluded=["TestFooClass"]),
             ExecuteTest("test4"),
@@ -186,13 +192,15 @@ class TestAggregatedHeuristics(HeuristicsTestMixin):
         aggregator.add_heuristic_results("heuristic1", heuristic1)
         aggregator.add_heuristic_results("heuristic2", heuristic2)
 
+        print("-------------------")
+        print("Aggregated Heuristics")
         aggregated_pris = aggregator.get_aggregated_priorities()
 
         self.assert_heuristics_match(
             aggregated_pris,
-            expected_high_tests=expected_aggregated_high_relevance,
-            expected_probable_tests=expected_aggregated_probable_relevance,
-            expected_unranked_tests=expected_aggregated_unranked_relevance,
+            expected_high_tests=expected_high_relevance,
+            expected_probable_tests=expected_probable_relevance,
+            expected_unranked_tests=expected_unranked_relevance,
         )
 
     def test_merging_file_heuristic_after_class_heuristic(self) -> None:
@@ -231,6 +239,7 @@ class TestAggregatedHeuristics(HeuristicsTestMixin):
             expected_probable_tests=expected_aggregated_probable_relevance,
             expected_unranked_tests=expected_aggregated_unranked_relevance,
         )
+
 
 if __name__ == "__main__":
     unittest.main()

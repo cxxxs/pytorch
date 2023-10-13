@@ -9,8 +9,8 @@ REPO_ROOT = pathlib.Path(__file__).resolve().parent.parent.parent
 try:
     # using tools/ to optimize test run.
     sys.path.append(str(REPO_ROOT))
-    from tools.testing.test_selections import calculate_shards, ShardedTest, THRESHOLD
     from tools.testing.execute_test import ExecuteTest
+    from tools.testing.test_selections import calculate_shards, ShardedTest, THRESHOLD
 except ModuleNotFoundError:
     print("Can't import required modules, exiting")
     sys.exit(1)
@@ -239,7 +239,10 @@ class TestCalculateShards(unittest.TestCase):
             (600.0, [ShardedTest(name="test2", shard=1, num_shards=1, time=THRESHOLD)]),
         ]
         self.assert_shards_equal(
-            expected_shards, calculate_shards(2, list(map(lambda t: ExecuteTest(t), test_times.keys())), test_times)
+            expected_shards,
+            calculate_shards(
+                2, [ExecuteTest(t) for t in test_times.keys()], test_times
+            ),
         )
 
         test_times = {"test1": THRESHOLD * 4, "test2": THRESHOLD * 2.5}

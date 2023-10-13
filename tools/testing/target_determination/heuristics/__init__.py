@@ -7,9 +7,9 @@ from tools.testing.target_determination.heuristics.edited_by_pr import EditedByP
 
 from tools.testing.target_determination.heuristics.interface import (
     AggregatedHeuristics as AggregatedHeuristics,
+    ExecuteTest as ExecuteTest,
     HeuristicInterface as HeuristicInterface,
     TestPrioritizations as TestPrioritizations,
-    ExecuteTest as ExecuteTest,
 )
 
 # Heuristics

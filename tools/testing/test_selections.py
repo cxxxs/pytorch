@@ -102,8 +102,8 @@ def calculate_shards(
 ) -> List[Tuple[float, List[ShardedTest]]]:
     must_serial = must_serial or (lambda x: True)
 
-    known_tests = tests
-    unknown_tests = []
+    known_tests: Sequence[ExecuteTest] = tests
+    unknown_tests: Sequence[ExecuteTest] = []
 
     if sort_by_time:
         known_tests = [x for x in tests if x.test_file in test_file_times]

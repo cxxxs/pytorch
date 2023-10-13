@@ -3,9 +3,20 @@ from abc import abstractmethod
 from enum import Enum
 from functools import total_ordering
 from itertools import chain
-from typing import Any, Callable, Dict, FrozenSet, Iterable, List, Optional, Set, Tuple
+from typing import (
+    Any,
+    Callable,
+    Dict,
+    FrozenSet,
+    Iterable,
+    Iterator,
+    List,
+    Optional,
+    Tuple,
+)
 
 from tools.testing.execute_test import ExecuteTest, TestRuns
+
 
 # Note: Keep the implementation of Relevance private to this file so
 # that it's easy to change in the future as we discover what's needed
@@ -30,7 +41,7 @@ class Relevance(Enum):
         return self.value < other.value
 
     @staticmethod
-    def priority_traversal() -> Iterable["Relevance"]:
+    def priority_traversal() -> Iterator["Relevance"]:
         yield Relevance.HIGH
         yield Relevance.PROBABLE
         yield Relevance.UNRANKED
@@ -43,8 +54,6 @@ METRIC_ORDER_WITHIN_RELEVANCE_GROUP = "order_within_relevance_group"
 METRIC_NUM_TESTS_IN_RELEVANCE_GROUP = "num_tests_in_relevance_group"
 METRIC_ORDER_OVERALL = "order_overall"
 METRIC_HEURISTIC_NAME = "heuristic_name"
-
-
 
 
 class TestPrioritizations:
@@ -93,11 +102,13 @@ class TestPrioritizations:
 
         self.validate_test_priorities()
 
-    def _traverse_priorities(self) -> Iterable[Tuple[Relevance, List[ExecuteTest]]]:
+    def _traverse_priorities(self) -> Iterator[Tuple[Relevance, List[ExecuteTest]]]:
         for relevance in Relevance.priority_traversal():
             yield (relevance, self._test_priorities[relevance.value])
 
-    def get_pointer_to_test(self, test_run: ExecuteTest) -> Tuple[Relevance, int]:
+    def get_pointer_to_test(
+        self, test_run: ExecuteTest
+    ) -> Iterator[Tuple[Relevance, int]]:
         # Find a test run that contains the given ExecuteTest and it's relevance.
         found_match = False
         for relevance, tests in self._traverse_priorities():
@@ -134,11 +145,10 @@ class TestPrioritizations:
             print("Not a test we care about")
             return  # We don't need this test
 
-        # The test mentioned in test_run could potentially have been split up into
-        # multiple TestRuns, each at a different relevance. Let's make sure to bring them
-        # all up to the minimum relevance
+        # The tests covered by test_run could potentially have been split up into
+        # multiple test executions, each at a different relevance. Let's make sure to bring
+        # all of them up to the minimum relevance
         upgraded_tests = ExecuteTest.empty()
-        tests_to_add = []
         tests_to_remove = []
         for curr_relevance, test_run_idx in self.get_pointer_to_test(test_run):
             if acceptable_relevance_fn(curr_relevance, new_relevance):
@@ -146,31 +156,41 @@ class TestPrioritizations:
                 print("Already in the right relevance group")
                 continue  # no changes needed
 
-            test_run_to_rerank = self._test_priorities[curr_relevance.value][test_run_idx]
+            test_run_to_rerank = self._test_priorities[curr_relevance.value][
+                test_run_idx
+            ]
             # Remove the requested tests from their current relevance group, to be added to the new one
             remaining_tests = test_run_to_rerank - test_run
+            print(f"  Old upgraded tests is {upgraded_tests}")
             upgraded_tests |= test_run_to_rerank & test_run
+            print(f"  New upgraded tests is {upgraded_tests}")
             if remaining_tests:
-                self._test_priorities[curr_relevance.value][test_run_idx] = remaining_tests
+                self._test_priorities[curr_relevance.value][
+                    test_run_idx
+                ] = remaining_tests
             else:
                 tests_to_remove.append((curr_relevance, test_run_idx))
 
         for relevance, test_idx in tests_to_remove:
             del self._test_priorities[relevance.value][test_idx]
 
-
         # And add it to the correct relevance group
+        print(f"Adding test {test_run} to relevance group {new_relevance.name}")
+        print(f"  Upgraded tests is {upgraded_tests}")
         if upgraded_tests:
+            print(f"  specificaly, {upgraded_tests}")
             self._test_priorities[new_relevance.value].append(upgraded_tests)
 
-        print(f"Adding test {test_run} to relevance group {new_relevance.name}")
-
-    def set_test_relevance(self, test_run: ExecuteTest, new_relevance: Relevance) -> None:
+    def set_test_relevance(
+        self, test_run: ExecuteTest, new_relevance: Relevance
+    ) -> None:
         return self._update_test_relevance(
             test_run, new_relevance, lambda curr, new: curr == new
         )
 
-    def raise_test_relevance(self, test_run: ExecuteTest, new_relevance: Relevance) -> None:
+    def raise_test_relevance(
+        self, test_run: ExecuteTest, new_relevance: Relevance
+    ) -> None:
         return self._update_test_relevance(
             test_run, new_relevance, lambda curr, new: curr >= new
         )
@@ -187,9 +207,16 @@ class TestPrioritizations:
             includes.update(test._included)
             excludes.update(test._excluded)
 
-        assert (
-            includes == excludes
-        ), "All includes should have been excluded elsewhere, and vice versa"
+        if includes != excludes:
+            for pri, tests in self._traverse_priorities():
+                print(f"Relenvance: {pri.name}")
+                for test in tests:
+                    print(f"  Test: {test}")
+            print(f"Includes: {includes}")
+            print(f"Excludes: {excludes}")
+            assert (
+                includes == excludes
+            ), "All includes should have been excluded elsewhere, and vice versa"
 
         # Ensure that the set of tests in the TestPrioritizations is identical to the set of tests passed in
         assert (
