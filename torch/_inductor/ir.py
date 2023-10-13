@@ -3772,6 +3772,61 @@ class DynamicScalar(ExternKernel):
 
 
 @dataclasses.dataclass
+class ComplexView(ExternKernelAlloc):
+    """View a complex number as two dtyped numbers or vice versa"""
+
+    def should_allocate(self):
+        return False
+
+    def __init__(
+        self,
+        layout,
+        kernel,
+        tensor_args,
+        nontensor_args,
+    ):
+        super().__init__(
+            layout,
+            tuple(tensor_args),
+            tuple(nontensor_args),
+        )
+        self.kernel = kernel
+        self.layout = layout
+
+    @classmethod
+    def create(cls, kernel, *args, **kwargs):
+        (
+            output,
+            tensor_args,
+            non_tensor_args,
+            unflatten_args,
+            schema,
+        ) = cls.process_kernel(kernel, *args, **kwargs)
+
+        assert isinstance(output, torch.Tensor)
+
+        layout = FixedLayout(
+            output.device,
+            output.dtype,
+            convert_shape_to_inductor(output.size()),
+            convert_shape_to_inductor(output.stride()),
+        )
+
+        packed = ComplexView(
+            layout,
+            kernel,
+            tensor_args,
+            non_tensor_args,
+        )
+
+        return packed
+
+    def get_alias_names(self):
+        # Signal to codegen that our output buffer isn't safe to reuse
+        return [self.inputs[0].codegen_reference()]
+
+
+@dataclasses.dataclass
 class ExternKernelNode:
     name: str
     node: export_schema.Node

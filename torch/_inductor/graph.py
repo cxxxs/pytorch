@@ -41,6 +41,7 @@ from .exc import (
 )
 from .ir import Constant, FixedLayout, InputBuffer, Pointwise, Reduction, TensorBox
 from .lowering import (
+    complex_handler,
     FALLBACK_ALLOW_LIST,
     fallback_handler,
     fallback_node_due_to_unsupported_type,
@@ -751,6 +752,13 @@ class GraphLowering(torch.fx.Interpreter):
                 # e.g. if we need to save symints for the backward graph.
                 if isinstance(n.meta["val"], torch.SymInt):
                     result = n.meta["val"].node.expr
+                else:
+                    result = super().run_node(n)
+            elif n.target == torch.ops.aten.view.dtype:
+                tensor = args[0]
+                dtype = args[1]
+                if dtype.is_complex or tensor.get_dtype().is_complex:
+                    result = complex_handler(n.target)(*args, **kwargs)
                 else:
                     result = super().run_node(n)
             elif is_magic_method(n.target):
