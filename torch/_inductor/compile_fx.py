@@ -293,7 +293,7 @@ def compile_fx_inner(
     user_visible_outputs: FrozenSet[str] = frozenset(),
     layout_opt: Optional[bool] = None,
     extern_node_serializer: Optional[Callable[[List[ExternKernelNode]], Any]] = None,
-):
+) -> Union[CompiledFxGraph, str]:
     """
     Inductor API that compiles a single graph.
 
@@ -337,11 +337,12 @@ def compile_fx_inner(
         "extern_node_serializer": extern_node_serializer,
     }
 
-    compiled_graph: CompiledFxGraph = fx_codegen_and_compile(
+    compiled_graph = fx_codegen_and_compile(
         *graph_args, **graph_kwargs  # type: ignore[arg-type]
     )
 
-    if aot_mode:
+    # isinstance is redundant since we also check aot_mode, but it is needed to make linter happy
+    if aot_mode or isinstance(compiled_graph, str):
         return compiled_graph
 
     if cudagraphs:
@@ -473,7 +474,7 @@ def fx_codegen_and_compile(
     user_visible_outputs: FrozenSet[str] = frozenset(),
     layout_opt: Optional[bool] = None,
     extern_node_serializer: Optional[Callable[[List[ExternKernelNode]], Any]] = None,
-) -> CompiledFxGraph:
+) -> Union[CompiledFxGraph, str]:
     if is_tf32_warning_applicable(gm):
         _warn_tf32_disabled()
 
@@ -847,7 +848,7 @@ def compile_fx_aot(
 
     extern_node_serializer = config_patches.pop("extern_node_serializer", None)
     with V.set_aot_compilation(True):
-        return compile_fx(
+        compiled_lib_path = compile_fx(
             model_,
             example_inputs_,
             inner_compile=functools.partial(
@@ -857,6 +858,10 @@ def compile_fx_aot(
             ),
             config_patches=config_patches,
         )
+        assert isinstance(
+            compiled_lib_path, str
+        ), "AOTInductor compilation result should be the path to the generated shared library"
+        return compiled_lib_path
 
 
 _graph_counter = itertools.count(0)
