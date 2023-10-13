@@ -22,6 +22,10 @@ add_custom_command(
         DEPENDS ${AOT_INDUCTOR_TEST_ROOT}/test.py
 )
 
+target_include_directories(test_aot_inductor PRIVATE
+  ${TORCH_SRC_DIR}/_inductor/aot_inductor_include
+)
+
 target_link_libraries(test_aot_inductor PRIVATE
   torch
   gtest
@@ -31,6 +35,10 @@ if(USE_CUDA)
   target_include_directories(test_aot_inductor PRIVATE ${ATen_CUDA_INCLUDE})
   target_compile_definitions(test_aot_inductor PRIVATE USE_CUDA CMAKE_CURRENT_BINARY_DIR=${CMAKE_CURRENT_BINARY_DIR})
 endif()
+
+target_link_libraries(test_aot_inductor PRIVATE
+  ${CMAKE_CURRENT_BINARY_DIR}/libaot_inductor_output.so
+)
 
 if(INSTALL_TEST)
   install(TARGETS test_aot_inductor DESTINATION bin)
