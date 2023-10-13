@@ -9,6 +9,7 @@ from tools.testing.target_determination.heuristics.interface import (
     AggregatedHeuristics as AggregatedHeuristics,
     HeuristicInterface as HeuristicInterface,
     TestPrioritizations as TestPrioritizations,
+    ExecuteTest as ExecuteTest,
 )
 
 # Heuristics

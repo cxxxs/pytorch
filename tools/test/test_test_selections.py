@@ -10,24 +10,40 @@ try:
     # using tools/ to optimize test run.
     sys.path.append(str(REPO_ROOT))
     from tools.testing.test_selections import calculate_shards, ShardedTest, THRESHOLD
+    from tools.testing.execute_test import ExecuteTest
 except ModuleNotFoundError:
     print("Can't import required modules, exiting")
     sys.exit(1)
 
 
+class TestCalculateShards2(unittest.TestCase):
+    def test_true(self) -> None:
+        self.assertTrue(True)
+
+
+class TestA(unittest.TestCase):
+    def test_true(self) -> None:
+        self.assertTrue(True)
+
+
+class TestB(unittest.TestCase):
+    def test_true(self) -> None:
+        self.assertTrue(True)
+
+
 class TestCalculateShards(unittest.TestCase):
     tests: List[str] = [
-        "super_long_test",
-        "long_test1",
-        "long_test2",
-        "normal_test1",
-        "normal_test2",
-        "normal_test3",
-        "short_test1",
-        "short_test2",
-        "short_test3",
-        "short_test4",
-        "short_test5",
+        ExecuteTest("super_long_test"),
+        ExecuteTest("long_test1"),
+        ExecuteTest("long_test2"),
+        ExecuteTest("normal_test1"),
+        ExecuteTest("normal_test2"),
+        ExecuteTest("normal_test3"),
+        ExecuteTest("short_test1"),
+        ExecuteTest("short_test2"),
+        ExecuteTest("short_test3"),
+        ExecuteTest("short_test4"),
+        ExecuteTest("short_test5"),
     ]
 
     test_times: Dict[str, float] = {
@@ -223,7 +239,7 @@ class TestCalculateShards(unittest.TestCase):
             (600.0, [ShardedTest(name="test2", shard=1, num_shards=1, time=THRESHOLD)]),
         ]
         self.assert_shards_equal(
-            expected_shards, calculate_shards(2, list(test_times.keys()), test_times)
+            expected_shards, calculate_shards(2, list(map(lambda t: ExecuteTest(t), test_times.keys())), test_times)
         )
 
         test_times = {"test1": THRESHOLD * 4, "test2": THRESHOLD * 2.5}
@@ -272,7 +288,7 @@ class TestCalculateShards(unittest.TestCase):
             }
 
             shards = calculate_shards(
-                num_shards, list(random_times.keys()), random_times
+                num_shards, [ExecuteTest(t) for t in random_times.keys()], random_times
             )
 
             times = [x[0] for x in shards]

@@ -15,7 +15,7 @@ import tempfile
 import time
 from contextlib import ExitStack
 from datetime import datetime
-from typing import Any, cast, Dict, List, NamedTuple, Optional, Tuple, Union
+from typing import Any, cast, Dict, List, NamedTuple, Optional, Sequence, Tuple, Union
 
 import pkg_resources
 
@@ -53,6 +53,8 @@ from tools.testing.test_selections import (
     ShardedTest,
     THRESHOLD,
 )
+
+from tools.testing.execute_test import ExecuteTest
 
 HAVE_TEST_SELECTION_TOOLS = True
 # Make sure to remove REPO_ROOT after import is done
@@ -1472,7 +1474,7 @@ def get_sharding_opts(options) -> Tuple[int, int]:
 
 def do_sharding(
     options,
-    selected_tests: List[str],
+    selected_tests: Sequence[str],
     test_file_times: Dict[str, float],
     sort_by_time: bool = True,
 ) -> List[ShardedTest]:
@@ -1679,7 +1681,9 @@ def main():
         sharded_tests: List[ShardedTest]
         failures: List[TestFailure]
 
-        def __init__(self, name: str, raw_tests: List[str], should_sort_shard: bool):
+        def __init__(
+            self, name: str, raw_tests: Sequence[ExecuteTest], should_sort_shard: bool
+        ):
             self.name = name
             self.failures = []
             self.sharded_tests = do_sharding(

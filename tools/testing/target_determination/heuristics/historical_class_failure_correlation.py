@@ -24,6 +24,7 @@ class HistoricalClassFailurCorrelation(HeuristicInterface):
     def get_test_priorities(self, tests: List[str]) -> TestPrioritizations:
         correlated_tests = _get_file_rating_tests()
         relevant_correlated_tests = [test for test in correlated_tests if test in tests]
+
         test_rankings = TestPrioritizations(
             tests_being_ranked=tests, probable_relevance=relevant_correlated_tests
         )
@@ -45,7 +46,7 @@ def _get_file_rating_tests() -> List[str]:
         return []
     ratings: Dict[str, float] = defaultdict(float)
     for file in changed_files:
-        for test_file, score in test_class_ratings.get(file, {}).items():
-            ratings[test_file] += score
+        for test_class, score in test_class_ratings.get(file, {}).items():
+            ratings[test_class] += score
     prioritize = sorted(ratings, key=lambda x: -ratings[x])
     return prioritize
