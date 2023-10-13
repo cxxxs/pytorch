@@ -1,5 +1,6 @@
 import os
 import sys
+import typing
 
 import torch
 
@@ -553,3 +554,11 @@ from .._dynamo.config_utils import install_config_module
 
 # adds patch, save_config, etc
 install_config_module(sys.modules[__name__])
+
+if typing.TYPE_CHECKING:
+
+    def patch(*args, **kwargs):
+        ...
+
+    def codegen_config():
+        ...

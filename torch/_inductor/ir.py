@@ -199,9 +199,9 @@ def ir_node_to_tensor(x, guard_shape=True):
         shape_fn = V.graph.sizevars.size_hint
     else:
         shape_fn = identity
-    size = [shape_fn(s) for s in x.get_size()]
+    size = tuple(shape_fn(s) for s in x.get_size())
     if is_storage_and_layout(x):
-        stride = [shape_fn(s) for s in x.get_layout().stride]
+        stride = tuple(shape_fn(s) for s in x.get_layout().stride)
     else:
         stride = make_contiguous_strides_for(size)
     dtype = x.get_dtype()
@@ -209,7 +209,7 @@ def ir_node_to_tensor(x, guard_shape=True):
     size = convert_shape_to_symint(size)
     stride = convert_shape_to_symint(stride)
     t = torch.empty_strided(
-        size=size, stride=stride, dtype=dtype, device=device
+        size=size, stride=stride, dtype=dtype, device=device  # type:ignore[arg-type]
     ).zero_()
     return t
 
@@ -2015,8 +2015,8 @@ class IndexingConstant(BaseConstant):
 class Layout(IRNode):
     def __init__(
         self,
-        device: torch.device,
-        dtype: torch.dtype,
+        device: Optional[torch.device],
+        dtype: Optional[torch.dtype],
         size: List[Expr],
         stride: Optional[Sequence[Union[Expr, int]]],
         offset: Expr = Integer(0),
@@ -2039,8 +2039,9 @@ class Layout(IRNode):
         offset = ""
         if self.offset != 0:
             offset = f", offset={self.offset}"
+        device = f"'{self.device.type}'" if self.device else None
         return (
-            f"{type(self).__name__}('{self.device.type}', {self.dtype}, "
+            f"{type(self).__name__}({device}, {self.dtype}, "
             f"size={self.size}, stride={self.stride}{offset})"
         )
 
@@ -2126,8 +2127,8 @@ class FixedLayout(Layout):
 
     def __init__(
         self,
-        device: torch.device,
-        dtype: torch.dtype,
+        device: Optional[torch.device],
+        dtype: Optional[torch.dtype],
         size: Union[List[Expr], List[int]],
         stride: Optional[Sequence[Union[Expr, int]]] = None,
         offset: Union[Expr, int] = Integer(0),
