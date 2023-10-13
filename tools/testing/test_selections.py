@@ -61,7 +61,7 @@ class ShardJob:
 
 
 def get_with_pytest_shard(
-    tests: List[ExecuteTest], test_file_times: Dict[str, float]
+    tests: Sequence[ExecuteTest], test_file_times: Dict[str, float]
 ) -> List[ShardedTest]:
     sharded_tests: List[ShardedTest] = []
     for test in tests:
